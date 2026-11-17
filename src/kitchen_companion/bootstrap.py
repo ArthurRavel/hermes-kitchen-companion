@@ -101,6 +101,7 @@ def bootstrap(
 
     created: list[dict[str, str]] = []
     existing: list[dict[str, str]] = []
+    category_created = not categories
     if categories:
         category = categories[0]
         category_id = str(category["id"])
@@ -134,7 +135,12 @@ def bootstrap(
         else:
             resource = client.create_channel(
                 config.guild_id,
-                {"name": name, "type": kind, "parent_id": category_id},
+                {
+                    "name": name,
+                    "type": kind,
+                    "parent_id": category_id,
+                    **({"position": position} if category_created else {}),
+                },
             )
             resource_id = str(resource["id"])
             created.append(
@@ -171,7 +177,7 @@ def save_state(path: Path, summary: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     payload = {
         "guild_id": summary["guild_id"],
-        "category": summary.get("category"),
+        "category_id": summary["category"]["id"],
         "channel_ids": summary.get("channel_ids", {}),
     }
     content = json.dumps(payload, indent=2, ensure_ascii=False) + "\n"

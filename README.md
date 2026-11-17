@@ -4,10 +4,10 @@ A self-hosted household kitchen assistant for Hermes Agent and Discord. The repo
 
 ## Quick start
 
-Requirements: Python 3.11+, a Discord server where you can add a bot, and Hermes Agent for the profile. The bootstrap uses only Python's standard library.
+Requirements: Python 3.11+, a Discord server where you can add a bot, and Hermes Agent for the profile. The bootstrap uses only Python's standard library. From a checkout of the repository, run:
 
     cd hermes-kitchen-companion
-    uv sync
+    uv sync --no-dev
     read -r -p "Discord server ID: " SERVER_ID
     uv run kitchen-companion discord setup --guild-id "$SERVER_ID" --dry-run
     uv run kitchen-companion discord setup --guild-id "$SERVER_ID"
@@ -24,7 +24,7 @@ The setup prints JSON with created/existing IDs, the local state file path, and 
 
 ## Create the Discord bot
 
-Create an application and bot in the Discord Developer Portal, then add the bot to your server. Grant **Manage Channels** (required to create channels and set their positions) and **View Channels** on the managed category and its channels so setup can discover existing resources safely. The guild channel-list endpoint omits channels the bot cannot view. Send Messages is needed for normal participation; for the forum notebook, also grant Send Messages in Threads and Create Public Threads. Avoid Administrator. The bot needs access to the selected server. Copy the server ID using Discord's Developer Mode. The setup never asks for or stores the server's other configuration. See the [Discord guild channel endpoints](https://docs.discord.com/developers/resources/guild) for current API permission and channel-type behavior.
+Create an application and bot in the Discord Developer Portal, then add the bot to your server. Grant **Manage Channels** (required to create channels and set their positions) and **View Channels** on the managed category and its channels so setup can discover existing resources safely. The guild channel-list endpoint omits channels the bot cannot view. Send Messages is needed for normal participation; for the forum notebook, also grant Send Messages in Threads and Create Public Threads. Avoid Administrator. The bot needs access to the selected server. Copy the server ID using Discord's Developer Mode. See the [Discord guild channel endpoints](https://docs.discord.com/developers/resources/guild) for current API permission and channel-type behavior.
 
 ## Exact channel result
 
@@ -51,6 +51,12 @@ Then inspect and select the installed profile using your Hermes version's profil
 
 The skill describes agent-driven behavior: two or three meal ideas on request, searching saved recipes first, saving only on explicit request, respecting household preferences and allergies, and offering vegetarian alternatives when relevant. These conversation behaviors depend on the installed Hermes model/tools; the Python package does not implement them as deterministic chat logic.
 
+## Connect Hermes to Discord
+
+The channel bootstrap does not configure or start the Hermes messaging gateway. To use the profile in Discord, follow the [official Hermes Discord setup](https://hermes-agent.nousresearch.com/docs/user-guide/messaging/discord) and use Hermes' supported credential setup outside this repository. The bootstrap credential and the gateway credential are not written by this project to its profile files. Enable the required Message Content and Server Members intents, and configure the household members or roles allowed to use the gateway. Hermes normally requires a mention for replies in server channels; this distribution does not set a channel response policy.
+
+The bootstrap writes a local channel-ID mapping. The profile skill can read that file when local file tools are available; it does not hard-code Discord IDs. If you pass a custom `--state-file`, set `kitchen-companion.channel_state_file` in the local Hermes config to that path.
+
 ## Local data and architecture
 
 Recipes and shopping items use portable JSON files under ~/.local/share/hermes-kitchen-companion by default. Set KITCHEN_COMPANION_DATA or pass --data-dir to change the location. For example:
@@ -59,6 +65,7 @@ Recipes and shopping items use portable JSON files under ~/.local/share/hermes-k
     uv run kitchen-companion recipe search lentil --data-dir ./household-data
     uv run kitchen-companion shopping add "Carrots" --data-dir ./household-data
     uv run kitchen-companion shopping list --data-dir ./household-data
+    uv run kitchen-companion shopping remove "Carrots" --data-dir ./household-data
 
 The agent should only store a recipe after someone explicitly asks. The CLI does not sync files to Discord; it provides local helpers the profile can use. Keep the data directory private and back it up as you would other household files.
 
@@ -79,7 +86,7 @@ No telemetry, analytics, hosted service, or automatic weekly scheduling is inclu
 
 examples/config.yaml documents the non-secret fields with placeholders. The Discord token comes only from the process environment or a hidden interactive prompt. It is not in config, shell command examples, generated files, CLI output, or logs. API errors show safe status messages without response bodies. HTTP requests have a timeout and bounded retries for Discord rate limits.
 
-The generated state file is written to ~/.config/hermes-kitchen-companion/discord-state.json by default (or --state-file). It contains the selected server ID, category ID, and channel-ID mapping. Recipe and shopping data stay in the configured local data directory. Discord receives only the channel setup requests. The profile's runtime privacy also depends on the Hermes deployment and Discord server access you configure.
+The generated state file is written to ~/.config/hermes-kitchen-companion/discord-state.json by default (or --state-file). It contains only the selected server ID, category ID, and channel-ID mapping. Recipe and shopping data stay in the configured local data directory. Discord receives only the channel setup requests. The profile's runtime privacy also depends on the Hermes deployment and Discord server access you configure.
 
 ## Troubleshooting
 
@@ -89,6 +96,7 @@ The generated state file is written to ~/.config/hermes-kitchen-companion/discor
 - **Duplicate category/channel:** rename or remove the duplicate yourself, then rerun setup. The tool will not guess which one to use.
 - **Rate limit or timeout:** retry later; the HTTP client waits on a bounded Retry-After interval and makes a finite number of attempts.
 - **Forum unavailable:** use a server where forum channels are enabled and ensure the bot can manage channels.
+- **Hermes bot stays offline:** check that Message Content and Server Members intents are enabled in the Developer Portal, and that gateway users or roles are allowed in Hermes configuration.
 
 ## Uninstall and rollback
 

@@ -95,3 +95,17 @@ def list_shopping_items(directory: Path) -> list[str]:
     if not isinstance(items, list) or not all(isinstance(value, str) for value in items):
         raise ValueError("Shopping list must contain a JSON list of text items.")
     return items
+
+
+def remove_shopping_item(directory: Path, item: str) -> dict[str, Any]:
+    """Remove one explicitly named shopping item, case-insensitively."""
+    needle = re.sub(r"\s+", " ", item).strip()
+    if not needle:
+        raise ValueError("Shopping item must not be empty.")
+    path = directory / "shopping.json"
+    items = list_shopping_items(directory)
+    removed = next((value for value in items if value.casefold() == needle.casefold()), None)
+    if removed is not None:
+        items.remove(removed)
+        _write(path, items)
+    return {"removed": removed, "items": items}

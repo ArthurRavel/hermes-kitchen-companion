@@ -9,6 +9,7 @@ from kitchen_companion.data import (
     add_recipe,
     add_shopping_item,
     list_shopping_items,
+    remove_shopping_item,
     search_recipes,
 )
 
@@ -60,3 +61,11 @@ def test_noninteractive_setup_refuses_echoed_credential(
     )
     assert cli.main(["discord", "setup", "--guild-id", str(10**17 + 4)]) == 2
     assert "environment" in capsys.readouterr().err
+
+
+def test_shopping_remove_requires_named_match_and_keeps_other_items(tmp_path: Path) -> None:
+    add_shopping_item(tmp_path, "Carrots")
+    add_shopping_item(tmp_path, "Rice")
+    result = remove_shopping_item(tmp_path, " carrots ")
+    assert result == {"removed": "Carrots", "items": ["Rice"]}
+    assert remove_shopping_item(tmp_path, "unknown") == {"removed": None, "items": ["Rice"]}

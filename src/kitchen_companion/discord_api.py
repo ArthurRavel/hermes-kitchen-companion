@@ -64,8 +64,8 @@ class UrllibTransport:
                 messages = {
                     401: "Discord rejected the bot credential. Check the environment variable "
                     "and try again.",
-                    403: "Discord denied this action. Confirm the bot is in the selected "
-                    "server and can manage channels.",
+                    403: "Discord denied this action. Confirm the bot can view the managed "
+                    "channels and has Manage Channels permission.",
                     404: "Discord could not find the selected server. Check its ID and bot access.",
                 }
                 raise DiscordError(

@@ -12,7 +12,13 @@ from pathlib import Path
 
 from . import __version__
 from .bootstrap import BootstrapConfig, bootstrap, save_state
-from .data import add_recipe, add_shopping_item, list_shopping_items, search_recipes
+from .data import (
+    add_recipe,
+    add_shopping_item,
+    list_shopping_items,
+    remove_shopping_item,
+    search_recipes,
+)
 from .discord_api import DiscordClient, DiscordError, UrllibTransport
 
 
@@ -66,6 +72,9 @@ def _parser() -> argparse.ArgumentParser:
     shopping_add = shopping_commands.add_parser("add")
     shopping_add.add_argument("item")
     shopping_add.add_argument("--data-dir", type=Path, default=_default_data())
+    shopping_remove = shopping_commands.add_parser("remove", help="Remove one named item")
+    shopping_remove.add_argument("item")
+    shopping_remove.add_argument("--data-dir", type=Path, default=_default_data())
     return parser
 
 
@@ -129,6 +138,8 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if args.shopping_command == "add":
             _emit(add_shopping_item(args.data_dir, args.item))
+        elif args.shopping_command == "remove":
+            _emit(remove_shopping_item(args.data_dir, args.item))
         else:
             _emit(list_shopping_items(args.data_dir))
         return 0

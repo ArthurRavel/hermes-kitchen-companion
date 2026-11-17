@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import secrets
 from pathlib import Path
 from typing import Any
@@ -57,6 +58,7 @@ def test_creates_category_and_default_channels_in_order() -> None:
         *[n for n, _ in EXPECTED],
     ]
     assert [item["type"] for item in transport.created] == [4, 0, 0, 0, 15, 0]
+    assert [item["position"] for item in transport.created[1:]] == [0, 1, 2, 3, 4]
     assert [item["position"] for item in transport.reorders[0][1:]] == [1, 2, 3, 4, 5]
     assert result["channel_ids"]["notebook"] == "new-5"
 
@@ -141,7 +143,9 @@ def test_state_file_contains_only_non_secret_mapping(tmp_path: Path) -> None:
     summary = bootstrap(make_client(FakeTransport()), BootstrapConfig(guild_id=TEST_GUILD_ID))
     save_state(path, summary)
     text = path.read_text()
-    assert "channel_ids" in text
+    stored = json.loads(text)
+    assert "channel_ids" in stored
+    assert set(stored) == {"guild_id", "category_id", "channel_ids"}
     assert "token" not in text.casefold()
     assert path.stat().st_mode & 0o777 == 0o600
 
