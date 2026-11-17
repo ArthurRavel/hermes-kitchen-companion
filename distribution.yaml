@@ -1,0 +1,9 @@
+name: hermes-kitchen-companion
+version: 0.1.0
+description: "A self-hosted household kitchen assistant for Hermes Agent and Discord."
+hermes_requires: ">=0.12.0"
+license: MIT
+env_requires:
+  - name: DISCORD_BOT_TOKEN
+    description: "Bot credential used only by the local Discord channel bootstrap command."
+    required: false

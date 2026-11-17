@@ -1,0 +1,7 @@
+# Non-secret settings. Set this local path to a directory writable by the agent.
+skills:
+  config:
+    kitchen-companion:
+      data_dir: "~/.local/share/hermes-kitchen-companion"
+      language: "en"
+      channel_state_file: "~/.config/hermes-kitchen-companion/discord-state.json"

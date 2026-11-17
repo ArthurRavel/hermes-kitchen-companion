@@ -1,0 +1,6 @@
+# Replace placeholders locally; never place credentials in this file.
+guild_id: "<DISCORD_SERVER_ID>"
+category_name: "🍳 Chez Dobby"
+language: "fr"
+data_dir: "<LOCAL_DATA_DIRECTORY>"
+channel_state_file: "<LOCAL_STATE_FILE>"
