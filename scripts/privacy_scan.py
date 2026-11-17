@@ -14,6 +14,13 @@ FINGERPRINT_FILE = Path(__file__).with_name("private_fingerprints.json")
 PRIVATE_FINGERPRINTS = set(json.loads(FINGERPRINT_FILE.read_text(encoding="utf-8")))
 IDENTIFIER = re.compile(r"[A-Za-zÀ-ÖØ-öø-ÿ]{3,}|\d{15,20}")
 HANDLE = re.compile(r"(?<!\w)@?([A-Za-z][A-Za-z0-9_]{2,})(?!\w)")
+PLACEHOLDER = re.compile(
+    r"(?i)^(?:your[_ -].*|<[^>]+>|placeholder|example|replace[_ -]?me|changeme)$"
+)
+DISCORD_ID_CONTEXT = re.compile(
+    r"(?i)\b(?:guild|server|channel|forum|category)"
+    r"(?:[_ -]?(?:snowflake|id))?\s*[:=]\s*[\"']?(\d{17,20})"
+)
 PATTERNS = {
     "home-path": re.compile(r"(?i)(?:/home/|/users/)[a-z0-9._-]+"),
     "discord-token": re.compile(
@@ -21,7 +28,7 @@ PATTERNS = {
     ),
     "github-token": re.compile(r"\b(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{30,})\b"),
     "credential-assignment": re.compile(
-        r"(?i)\b(?:api[_-]?key|secret|token|password|passwd)\s*[:=]\s*[\x22\x27][A-Za-z0-9/+=._-]{12,}[\x22\x27]"
+        r"(?i)\b(?:api[_-]?key|secret|token|password|passwd)\s*[:=]\s*[\x22\x27]([A-Za-z0-9/+=._-]{12,})[\x22\x27]"
     ),
     "jwt": re.compile(r"\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b"),
     "provider-key": re.compile(r"\b(?:AIza[0-9A-Za-z_-]{30,}|sk_(?:live|test)_[0-9A-Za-z]{20,})\b"),
@@ -29,9 +36,7 @@ PATTERNS = {
     "slack-token": re.compile(r"\bxox[baprs]-[A-Za-z0-9-]{20,}\b"),
     "aws-access-key": re.compile(r"\bAKIA[0-9A-Z]{16}\b"),
     "private-key": re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
-    "private-reference-marker": re.compile(
-        r"(?i)(?:discord\.com/api/webhooks/|guild_id\s*[:=]\s*[\"']?\d{17,20})"
-    ),
+    "private-reference-marker": re.compile(r"(?i)discord\.com/api/webhooks/"),
 }
 
 
@@ -49,6 +54,11 @@ def candidate_files(root: Path) -> list[Path]:
     ]
 
 
+def _location(root: Path, path: Path, content: str, offset: int) -> str:
+    line_number = content.count("\n", 0, offset) + 1
+    return f"{path.relative_to(root)}:{line_number}"
+
+
 def violations(root: Path) -> list[tuple[str, str]]:
     found: list[tuple[str, str]] = []
     for path in candidate_files(root):
@@ -56,11 +66,21 @@ def violations(root: Path) -> list[tuple[str, str]]:
             content = path.read_bytes().decode("utf-8")
         except (UnicodeDecodeError, OSError):
             continue
+
+        for label, pattern in PATTERNS.items():
+            for match in pattern.finditer(content):
+                if label == "credential-assignment" and PLACEHOLDER.fullmatch(match.group(1)):
+                    continue
+                found.append((_location(root, path, content, match.start()), label))
+        for match in DISCORD_ID_CONTEXT.finditer(content):
+            if PLACEHOLDER.fullmatch(match.group(1)):
+                continue
+            found.append(
+                (_location(root, path, content, match.start()), "private-reference-marker")
+            )
+
         for line_number, line in enumerate(content.splitlines(), start=1):
             location = f"{path.relative_to(root)}:{line_number}"
-            for label, pattern in PATTERNS.items():
-                if pattern.search(line):
-                    found.append((location, label))
             identifiers = set(IDENTIFIER.findall(line)) | set(HANDLE.findall(line))
             for identifier in identifiers:
                 digest = hashlib.sha256(identifier.casefold().encode("utf-8")).hexdigest()

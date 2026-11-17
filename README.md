@@ -43,9 +43,13 @@ The category name is configurable (--category). Channel names can use the Englis
 
 ## Install the Hermes profile
 
-After this repository is published at its public Git URL, install the distribution with Hermes:
+Hermes profile installation installs the Hermes distribution only; it does **not** install this repository's Python CLI. To install the public CLI with uv:
 
-    hermes profile install <PUBLIC_REPOSITORY_URL> --name kitchen-companion --alias
+    uv tool install git+https://github.com/ArthurRavel/hermes-kitchen-companion.git
+
+For a checkout/virtual environment install, use the [Quick start](#quick-start) commands above. To install the Hermes profile distribution, use its public repository source:
+
+    hermes profile install github.com/ArthurRavel/hermes-kitchen-companion --name kitchen-companion --alias
 
 Then inspect and select the installed profile using your Hermes version's profile commands. The repository root contains distribution.yaml, SOUL.md, config.yaml, and skills/household/kitchen-companion/SKILL.md, following the [Hermes profile distribution](https://hermes-agent.nousresearch.com/docs/user-guide/profile-distributions) and [skill](https://hermes-agent.nousresearch.com/docs/developer-guide/creating-skills) layouts. Inspect the installed distribution with hermes profile info kitchen-companion and hermes profile list. Hermes Agent is not bundled, and this project is not affiliated with Hermes Agent or Discord.
 
