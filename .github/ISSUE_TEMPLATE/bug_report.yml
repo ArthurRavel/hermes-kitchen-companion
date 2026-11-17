@@ -1,0 +1,24 @@
+name: Bug report
+description: Report a reproducible issue without sharing private household data.
+title: "[Bug]: "
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Do not include tokens, server IDs, personal data, or private logs.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Safe reproduction steps
+      description: Use a fake server/transport where possible.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+    validations:
+      required: true
